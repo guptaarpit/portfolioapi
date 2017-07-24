@@ -1,0 +1,29 @@
+  Select aa.[cuNumber],aa.[joinNumber],aa.[Quarter],aa.[stateName],aa.[GrowthInAssets],aa.[GrowthInLoans],
+  aa.[GrowthInMembers],aa.[ReturnOnEquity],
+  bb.[ReturnOnAssets],
+  (case when isnull(aa.[TotalAssets],0) <= 250000000 then '<=$250MN'
+	when  isnull(aa.[TotalAssets],0) <= 500000000 then '$251MN-$500MN'
+	when  isnull(aa.[TotalAssets],0) <= 1000000000 then '$500MN-$1BN'
+	when  isnull(aa.[TotalAssets],0) <= 2000000000 then '$1BN-$2BN'
+	else '$2BN+' end) 'Asset_Band'
+  into #temp1
+  FROM [5300CallReports_New].[dbo].[Product_Visual_Table_Keyparameters_201703]  aa
+  left join [5300CallReports_New].[dbo].[Product_Visual_Table_CAMELS_201703] bb
+  on aa.[cuNumber] = bb.[cuNumber]
+  and aa.[joinNumber] = bb.[joinNumber]
+  and aa.[Quarter] = bb.[Quarter]
+  order by aa.[cuNumber],aa.[joinNumber],aa.[Quarter]
+  
+
+   Select [cuNumber],[joinNumber],[Quarter],[stateName],[Asset_Band]
+   , PERCENT_RANK () over (partition by [Quarter],[stateName] order by [GrowthInAssets]) as AssetGrowth_statepercentile
+   , PERCENT_RANK () over (partition by [Quarter],[Asset_Band] order by [GrowthInAssets]) as AssetGrowth_assetbandpercentile
+   , PERCENT_RANK () over (partition by [Quarter],[stateName] order by [GrowthInLoans]) as LoanGrowth_statepercentile
+   , PERCENT_RANK () over (partition by [Quarter],[Asset_Band] order by [GrowthInLoans]) as LoanGrowth_assetbandpercentile
+   , PERCENT_RANK () over (partition by [Quarter],[stateName] order by [GrowthInMembers]) as MemberGrowth_statepercentile
+   , PERCENT_RANK () over (partition by [Quarter],[Asset_Band] order by [GrowthInMembers]) as MemberGrowth_assetbandpercentile
+   , PERCENT_RANK () over (partition by [Quarter],[stateName] order by [ReturnOnAssets]) as ROA_statepercentile
+   , PERCENT_RANK () over (partition by [Quarter],[Asset_Band] order by [ReturnOnAssets]) as ROA_assetbandpercentile
+   , PERCENT_RANK () over (partition by [Quarter],[stateName] order by [ReturnOnEquity]) as ROE_statepercentile
+   , PERCENT_RANK () over (partition by [Quarter],[Asset_Band] order by [ReturnOnEquity]) as ROE_assetbandpercentile
+   from #temp1
